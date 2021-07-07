@@ -1,3 +1,3 @@
-# Book metasoup
+# Meta
 
-Get book metadata from various websites.
+Get book/movie/music metadata from various websites.
