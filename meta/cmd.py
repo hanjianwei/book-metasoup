@@ -1,33 +1,45 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 from .douban import Douban
 from .calibre import Calibre
 
 import sys
+import click
+from pprint import pprint
 
 
-def is_supported_id_type(name):
-    return name.lower() in ["isbn", "douban"]
+@click.group()
+def cli():
+    pass
 
 
-def main():
-    identifiers = sys.argv[1:]
-    t = 'isbn'
+@cli.command()
+@click.option(
+    "--type",
+    "-t",
+    type=click.Choice(["isbn", "subject", "url"], case_sensitive=False),
+    default="url",
+    help="Identifier type",
+)
+@click.argument("identifier")
+def book(type, identifier):
+    db = Douban()
+    if type == "isbn":
+        book = db.book_by_isbn(identifier)
+    elif type == "subject":
+        book = db.book_by_subject(identifier)
+    else:
+        book = db.book_by_url(identifier)
+    pprint(vars(book))
 
-    id_handlers = {
-        'isbn': Douban(),
-    }
 
+@cli.command()
+def movie():
+    click.echo("Movie")
 
-    for id in identifiers:
-        if is_supported_id_type(id):
-            t = id
-        else:
-            pass
 
 if __name__ == "__main__":
-    main()
-
+    cli()
 
     # c = Calibre()
     # calibre_id = c.search_isbn(isbn)

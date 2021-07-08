@@ -3,33 +3,25 @@
 import os.path
 from bs4 import BeautifulSoup
 from .book import Book
-from .source import Source
+from .client import Client
 
 
-class Douban(Source):
-    def __init__(self, **identifiers):
-        super().__init__()
+class Douban:
+    def __init__(self):
+        self.douban = Client()
 
-    def search(self, **query):
-        isbn = query.get("isbn")
-        subject = query.get("douban")
+    def book_by_isbn(self, isbn):
+        return self.book_by_url(f"https://www.douban.com/isbn/{isbn}")
 
-        # Get book URL
-        if isbn is not None:
-            url = "https://www.douban.com/isbn/{isbn}".format(query)
-        elif subject is not None:
-            url = "https://book.douban.com/subject/{douban}".format(query)
-        else:
-            return None
+    def book_by_subject(self, subject):
+        return self.book_by_url(f"https://book.douban.com/subject/{subject}")
 
+    def book_by_url(self, url):
         # Request the book page
-        r = self.req(url)
+        r = self.douban.get(url)
         if r is None:
             return None
 
-        return self.parse(r)
-
-    def parse(self, r):
         # Parse html for metadata
         markup = r.text
         doc = BeautifulSoup(markup, "html.parser")
@@ -38,17 +30,21 @@ class Douban(Source):
 
         print(meta)
         # Mapping to book fields
-        book = Book()
+        identifiers = {
+            "douban": os.path.basename(os.path.normpath(r.url)),
+        }
+        if "ISBN" in meta:
+            identifiers["isbn"] = meta.get("ISBN")
 
-        book.subject = os.path.basename(os.path.normpath(r.url))
-        book.isbn = meta.get("ISBN")
-        book.cover = doc.find(id="mainpic").a.get("href")
-        book.title = doc.h1.text.strip()
-        book.authors = meta.get("作者").replace("/", "&")
-        book.publisher = meta.get("出版社")
-        book.pubdate = meta.get("出版年")
-        book.series = meta.get("丛书")
-        book.price = meta.get("定价")
-        book.comments = doc.find(id="link-report").text.strip()
-
+        book = Book(
+            identifiers=identifiers,
+            cover_url=doc.find(id="mainpic").a.get("href"),
+            title=doc.h1.text.strip(),
+            authors=meta.get("作者").replace("/", "&"),
+            publisher=meta.get("出版社"),
+            pubdate=meta.get("出版年"),
+            series=meta.get("丛书"),
+            price=meta.get("定价"),
+            comments=doc.find(id="link-report").text.strip(),
+        )
         return book

@@ -16,9 +16,10 @@ setuptools.setup(
     install_requires=[
         "requests",
         "beautifulsoup4",
+        "Click",
     ],
     entry_points={
-        "console_scripts": ["meta = meta.cmd:main"],
+        "console_scripts": ["meta = meta.cmd:cli"],
     },
     classifiers=[
         "Programming Language :: Python :: 3",
